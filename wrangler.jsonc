@@ -1,0 +1,9 @@
+{
+  "name": "aster-map",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-26",
+  "workers_dev": true,
+  "observability": {
+    "enabled": false
+  }
+}
