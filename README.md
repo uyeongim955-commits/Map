@@ -1,47 +1,53 @@
-# 아스테르 SVG 지도 Worker
+# 아스테르 지도 PNG 호환 수정본
+
+## 기존 GitHub 저장소에 적용
+- 이 ZIP의 파일을 기존 저장소 최상위에 덮어씁니다. 신규 파일도 함께 올립니다.
+- Worker 이름은 map, 배포 주소는 https://map.a202214421.workers.dev 입니다.
+- 빌드 명령: npm run check
+- 배포 명령: npm run deploy
+- Cloudflare의 재배포 완료 후 아래 테스트 주소를 엽니다.
+  https://map.a202214421.workers.dev/1.png?p=8,8,0,15,13
+- 크랙 단축어는 동봉한 단축어_템플릿.txt로 교체합니다.
+- ZIP 전체 파일이 필요합니다. worker.mjs만 교체하면 신규 모듈을 읽을 수 없습니다.
+
+## 바뀐 점
+- /1.png, /2.png, /3.png가 PNG 이미지를 반환합니다.
+- /1, /2, /3도 PNG를 반환합니다. 기존 SVG를 제공하던 경로입니다.
+- /1.svg, /2.svg, /3.svg는 PNG 변환용 SVG 원본입니다.
+- 한글을 폰트 의존 없는 도형으로 변환해 서버의 한글 글꼴 유무에 따른 깨짐을 방지했습니다.
+- SVG 생성은 본인 Worker, PNG 변환은 외부 이미지 서비스 wsrv.nl이 처리합니다. 해당 서비스 장애 시 변환도 실패할 수 있습니다.
+- Worker에서 직접 무거운 PNG 렌더링을 하지 않습니다. 무료 Worker의 CPU 한도를 고려한 방식입니다.
+- 새로 생성한 소스 URL은 고정 인물의 지도 번호·위치 코드와 버전만 포함합니다. 대화·페르소나·유저노트·개인 식별 내용을 넣지 않습니다.
+- 이미지 변환 서비스에는 지도 원본 SVG URL이 전달됩니다. 요청자의 쿠키·인증 정보·IP 헤더를 전달하는 코드는 없습니다.
+- 기존 /1 URL의 SVG 캐시와 구분하기 위해 단축어에서 .png 경로를 사용합니다.
 
 ## 파일
-- worker.mjs: SVG를 만드는 실제 Worker 코드. 지도 이미지가 코드 안에 포함됨.
-- wrangler.jsonc: Worker 이름·실행 파일·호환 날짜·로그 설정.
-- package.json / package-lock.json: 배포 도구와 버전 고정 정보.
-- 단축어_템플릿.txt: 크랙에 등록할 /지도 지시문.
+- worker.mjs: 요청 처리와 PNG 변환 중계
+- map-svg.mjs: 지도와 인물 위치 SVG 생성
+- text-paths.mjs / glyphs.mjs: 한글 글자를 도형으로 변환
+- wrangler.jsonc: Worker 이름 map, 실행 파일, 로그 비활성 설정
+- package.json / package-lock.json: 배포 도구
+- FONT-LICENSE.txt: 글자 도형 원본 Noto Sans CJK KR의 라이선스
+- 단축어_템플릿.txt: 실제 배포 주소가 적용된 355자 단축어
 
-## GitHub를 거쳐 배포
-1. GitHub에서 저장소를 만듭니다. 권장 이름은 aster-map입니다.
-2. 이 ZIP을 풀고 파일들을 저장소 최상위에 업로드합니다. ZIP 자체를 올리거나 상위 폴더째 감싸지 않습니다.
-3. Cloudflare 대시보드의 Workers & Pages에서 Git 저장소를 연결해 Worker를 생성합니다. GitHub 계정을 연결하고 방금 저장소를 선택합니다.
-4. 프로젝트/Worker 이름은 aster-map으로 지정합니다. wrangler.jsonc의 name과 일치해야 합니다.
-5. 루트 디렉터리는 저장소 최상위(/), 빌드 명령은 npm run check, 배포 명령은 npm run deploy로 지정합니다.
-6. 배포합니다. 생성된 https://aster-map.본인계정.workers.dev 주소를 확인합니다.
-7. 단축어_템플릿.txt의 WORKER_HOST 세 곳을 실제 호스트(https:// 제외)로 바꿔 크랙에 등록합니다.
+## 상태
+- 기존 배포 주소가 200 OK와 image/svg+xml을 반환하는 것을 확인했습니다.
+- 외부 변환 서비스의 실제 PNG 응답과 PNG 시그니처를 확인했습니다.
+- 새 글자 도형 SVG의 한글·핀·명단을 PNG로 렌더링해 검수했습니다.
+- 새 Worker의 PNG·SVG 분기, 위치값 검증, 외부 변환 실패 처리를 검증했습니다.
+- 새 Worker의 실제 원격 재배포와 크랙 내부 표시는 사용자의 GitHub 반영 후 확인해야 합니다.
 
-이 구성은 GitHub에 코드를 보관하고 Cloudflare Worker에서 실행합니다. GitHub Pages에 정적 파일로 올리는 구성과 다릅니다.
-실제 GitHub 저장소 생성·업로드·Cloudflare 연결·배포는 아직 수행되지 않았습니다.
-
-## 확인
-발급된 주소 뒤에 /1?p=8,8,0,15,13 을 붙여 엽니다.
-지도와 아리엘·미하일·리비아·카셀·린의 위치 목록이 나타나면 정상입니다.
-위 예시는 테스트용 위치이며 실제 RP 위치 기록이 아닙니다.
-
-## 3장의 순서
-- /1: 아리엘·미하일·리비아·카셀·린
-- /2: 시론·아일라·로더릭·셀리나·루카스
-- /3: 이레네·이블린·발테르·엘레나·로에나
+## 인물 순서
+1장: 아리엘·미하일·리비아·카셀·린
+2장: 시론·아일라·로더릭·셀리나·루카스
+3장: 이레네·이블린·발테르·엘레나·로에나
 
 ## 위치 코드
 0 미상 / 1 본관 / 2 강의실 / 3 교수실 / 4 학생회실 / 5 동아리실
 6 도서관 / 7 금서고 / 8 훈련장 / 9 던전 입구 / 10~12 던전 1~3층
 13 식당 / 14 의무실 / 15 남학생 기숙사 / 16 여학생 기숙사
-17 아리안 호수 / 18 호수 주변 숲 / 19 정문 / 20 루엔 / 21 교외 / 22 사망
+17 호수 / 18 숲 / 19 정문 / 20 루엔 / 21 교외 / 22 사망
 
-현재 시점에 확인된 위치만 표시합니다. 불명은 0, 지도 밖·사망은 목록만 표시합니다.
-던전 인물은 입구에 핀을 찍고 목록으로 층수를 구분합니다.
-
-## 데이터
-요청에는 지도 번호와 고정 인물의 위치 번호만 사용합니다.
-대화·페르소나·유저노트 전송 기능과 데이터베이스·쿠키·요청 로그 코드는 없습니다.
-Workers Observability는 wrangler.jsonc에서 비활성화했습니다.
-
-## 공식 안내
-https://developers.cloudflare.com/workers/ci-cd/builds/
-https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
+## 공식 문서
+https://wsrv.nl/docs/
+https://developers.cloudflare.com/workers/platform/limits/
