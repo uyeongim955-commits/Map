@@ -27,15 +27,20 @@ const PLACES = [
   ['아리안 호수', .61, .22],
   ['호수 주변 숲', .18, .22],
   ['정문', .445, .80],
-  ['루엔 · 지도 밖', null, null],
+  ['루엔 시내', .60, .86],
   ['교외 · 지도 밖', null, null],
   ['사망 · 위치 표시 제외', null, null],
 ];
-const COLORS = ['#b43735', '#245b9b', '#30754a', '#75449b', '#9a5b0a'];
-const W = 900, HEADER = 96, MAP_H = W * 1037 / 1516;
-const LEGEND_Y = HEADER + MAP_H + 20, ROW_H = 70;
-const H = Math.ceil(LEGEND_Y + 5 * ROW_H + 66);
+const COLORS = ['#66442b', '#6d5632', '#76503b', '#62513a', '#806035'];
+const W = 900, HEADER = 0, MAP_H = W * 1037 / 1516;
+const LEGEND_Y = MAP_H + 17, ROW_H = 71;
+const H = Math.ceil(LEGEND_Y + 5 * ROW_H + 9);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+
+function seal(x, y, number, ink, small = false) {
+  const s = small ? .82 : 1;
+  return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s})"><path d="M-15-25H15L25-15V15L15 25H-15L-25 15V-15Z" fill="url(#pinPaper)" stroke="${ink}" stroke-width="2.2"/><path d="M-13-21H13L21-13V13L13 21H-13L-21 13V-13Z" fill="none" stroke="#bd985a" stroke-width=".9"/><circle r="17.5" fill="none" stroke="#b18c52" stroke-width=".7"/><path d="M0-23V-19M23 0H19M0 23V19M-23 0H-19" stroke="${ink}" stroke-width="1.1"/><text x="0" y="9" text-anchor="middle" font-size="29" font-weight="700" fill="${ink}">${number}</text></g>`;
+}
 
 export function parseLocations(value) {
   const tokens = typeof value === 'string' ? value.split(',') : [];
@@ -58,14 +63,19 @@ export function renderMap(page, locations) {
     const theta = -Math.PI / 2 + 2 * Math.PI * rank / nearby.length;
     let x = ax, y = ay - 31;
     if (nearby.length > 1) {x = ax + 55 * Math.cos(theta); y = ay + 55 * Math.sin(theta);}
+    if (p.code === 20) {
+      const city = pins.filter(q => q.code === 20);
+      x = ax + (city.findIndex(q => q.i === p.i) - (city.length - 1) / 2) * 57;
+      y = ay - 34;
+    }
     x = Math.max(30, Math.min(W - 30, x)); y = Math.max(HEADER + 30, Math.min(HEADER + MAP_H - 30, y));
-    return `<g aria-label="${esc(p.name + ': ' + p.place[0])}"><path d="M${ax.toFixed(1)} ${ay.toFixed(1)} L${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="#fff9e9" stroke-width="7"/><path d="M${ax.toFixed(1)} ${ay.toFixed(1)} L${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="${p.color}" stroke-width="3"/><circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="5" fill="${p.color}" stroke="#fff" stroke-width="2"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="23" fill="${p.color}" stroke="#fff9e9" stroke-width="4"/><text x="${x.toFixed(1)}" y="${(y + 9).toFixed(1)}" text-anchor="middle" font-size="29" font-weight="700" fill="#fff">${p.i + 1}</text></g>`;
+    return `<g aria-label="${esc(p.name + ': ' + p.place[0])}"><path d="M${ax.toFixed(1)} ${ay.toFixed(1)} L${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="#f3e3bf" stroke-width="6"/><path d="M${ax.toFixed(1)} ${ay.toFixed(1)} L${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="${p.color}" stroke-width="2"/><circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="4.5" fill="${p.color}" stroke="#f3e3bf" stroke-width="2"/>${seal(x,y,p.i+1,p.color)}</g>`;
   }).join('');
   const rows = people.map(p => {
     const y = LEGEND_Y + p.i * ROW_H;
-    return `<g transform="translate(26 ${y.toFixed(1)})"><rect width="848" height="62" rx="11" fill="${p.i % 2 ? '#eae0ca' : '#f3ead6'}"/><circle cx="31" cy="31" r="20" fill="${p.color}"/><text x="31" y="40" text-anchor="middle" font-size="27" font-weight="700" fill="#fff">${p.i + 1}</text><text x="68" y="41" font-size="32" font-weight="700" fill="#2a2520">${esc(p.name)}</text><text x="252" y="40" font-size="27" fill="#51483a">${esc(p.place[0])}</text></g>`;
+    return `<g transform="translate(25 ${y.toFixed(1)})"><path d="M8 1H839L850 11V52L839 63H9L0 54V10Z" fill="${p.i % 2 ? '#dfc795' : '#ecdbb4'}" stroke="#a3834e" stroke-width="1.1"/><path d="M15 6H833L844 15V48L834 58H15L6 49V14Z" fill="url(#paperGrain)" stroke="#f5e5c2" stroke-width=".7"/><path d="M230 14V50" stroke="#b59761" stroke-width=".8"/><path d="M810 31H831M821 20V42" stroke="#a88b56" stroke-width=".65" opacity=".45"/>${seal(34,32,p.i+1,p.color,true)}<text x="76" y="43" font-size="31" font-weight="700" fill="#533b26">${esc(p.name)}</text><text x="253" y="42" font-size="26" fill="#624c31">${esc(p.place[0])}</text></g>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><title>아스테르 주요 인물 위치 ${page}/3</title><desc>다섯 명의 위치. 실내 위치는 건물 대표 좌표, 지하 던전은 입구에 표시. 확인되지 않은 위치는 미상.</desc><g font-family="Aster Map Sans,sans-serif"><rect width="${W}" height="${H}" fill="#f8f1e1"/><rect width="${W}" height="${HEADER}" fill="#242d2b"/><text x="28" y="41" font-size="30" font-weight="700" fill="#fff5d8">아스테르 · 주요 인물 위치</text><text x="28" y="75" font-size="22" fill="#d4c9a9">등록 순서 ${(page - 1) * 5 + 1}–${page * 5} · 확인 위치 기준</text><text x="864" y="55" text-anchor="end" font-size="32" font-weight="700" fill="#e9c17a">${page} / 3</text><image x="0" y="${HEADER}" width="${W}" height="${MAP_H}" preserveAspectRatio="xMidYMid meet" xlink:href="${MAP_IMAGE}"/>${markers}${rows}<text x="28" y="${H - 35}" font-size="19" fill="#6a604f">실내는 건물 위치 · 지하는 입구 표시 · 지도 밖은 목록만 표시</text><text x="28" y="${H - 12}" font-size="17" fill="#817660">이 지도는 OOC 참고용이며 등장인물의 인지·이동을 발생시키지 않음</text></g></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img"><title>아스테르 지도 ${page}/3</title><defs><linearGradient id="paperBase" x2="0" y2="1"><stop stop-color="#d5b878"/><stop offset=".35" stop-color="#e8d3a4"/><stop offset="1" stop-color="#d9bf88"/></linearGradient><linearGradient id="pinPaper" x2="1" y2="1"><stop stop-color="#f6e8c8"/><stop offset=".55" stop-color="#e4cc99"/><stop offset="1" stop-color="#c4a368"/></linearGradient><pattern id="paperGrain" width="71" height="47" patternUnits="userSpaceOnUse"><circle cx="7" cy="9" r=".8" fill="#94733d" opacity=".15"/><circle cx="31" cy="38" r=".6" fill="#80602e" opacity=".12"/><path d="M48 15l3 1M18 29l2-1" stroke="#9b7a42" stroke-width=".7" opacity=".16"/></pattern></defs><g font-family="Aster Map Sans,sans-serif"><rect width="${W}" height="${H}" fill="url(#paperBase)"/><rect width="${W}" height="${H}" fill="url(#paperGrain)"/><image x="0" y="0" width="${W}" height="${MAP_H}" preserveAspectRatio="xMidYMid meet" xlink:href="${MAP_IMAGE}"/><path d="M${(.47*W).toFixed(1)} ${(.815*MAP_H).toFixed(1)}L${(.60*W).toFixed(1)} ${(.86*MAP_H).toFixed(1)}" stroke="#8d6c39" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/><rect x="${(.60*W-58).toFixed(1)}" y="${(.86*MAP_H+9).toFixed(1)}" width="116" height="29" rx="2" fill="#eddcb3" stroke="#957140" stroke-width="1.1"/><text x="${(.60*W).toFixed(1)}" y="${(.86*MAP_H+30).toFixed(1)}" text-anchor="middle" font-size="20" font-weight="700" fill="#64472a">루엔 시내</text>${markers}<path d="M20 ${(MAP_H+7).toFixed(1)}H880" stroke="#a17e43" stroke-width="1"/>${rows}</g></svg>`;
 }
 
 export default {
