@@ -1,8 +1,8 @@
-import { renderMap, parseLocations } from './map-svg.mjs';
+import { renderMap, resolveLocations } from './map-svg.mjs';
 import { outlineText } from './text-paths.mjs';
 
 const SVG_ORIGIN = 'https://map.a202214421.workers.dev';
-const VERSION = 'parchment-v4';
+const VERSION = 'parchment-random-v5';
 const PNG_HEADERS = {
   'Content-Type': 'image/png',
   'Cache-Control': 'public, max-age=86400',
@@ -18,7 +18,7 @@ export default {
     const match = url.pathname.match(/^\/([123])(?:\.(png|svg))?\/?$/);
     if (!match) return new Response('Aster PNG map: /1.png?p=0,0,0,0,0  /2.png?p=0,0,0,0,0  /3.png?p=0,0,0,0,0',{headers:{'Content-Type':'text/plain; charset=utf-8'}});
     const page = Number(match[1]);
-    const positions = parseLocations(url.searchParams.get('p'));
+    const positions = resolveLocations(page, url.searchParams.get('p'));
     if (match[2] === 'svg') {
       return new Response(request.method === 'HEAD' ? null : outlineText(renderMap(page,positions)),{headers:{'Content-Type':'image/svg+xml; charset=utf-8','Cache-Control':'public, max-age=86400','Access-Control-Allow-Origin':'*','X-Content-Type-Options':'nosniff'}});
     }

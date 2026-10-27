@@ -50,9 +50,22 @@ export function parseLocations(value) {
   });
 }
 
+export function resolveLocations(page, value) {
+  if (!Number.isInteger(page) || page < 1 || page > 3) throw new RangeError('page');
+  const ids = parseLocations(Array.isArray(value) ? value.join(',') : value);
+  const boys = new Set(['미하일','카셀','시론','로더릭','루카스']);
+  return ids.map((id, i) => {
+    if (id !== 0) return id;
+    const name = GROUPS[page - 1][i];
+    const faculty = page === 3 && i >= 1;
+    const pool = faculty ? [1,2,3,6,8,13,17,20] : [1,2,5,6,8,13,boys.has(name) ? 15 : 16,17,18,19,20];
+    return pool[Math.floor(Math.random() * pool.length)];
+  });
+}
+
 export function renderMap(page, locations) {
   if (!Number.isInteger(page) || page < 1 || page > 3) throw new RangeError('page');
-  const ids = parseLocations(Array.isArray(locations) ? locations.join(',') : locations);
+  const ids = resolveLocations(page, locations);
   const people = GROUPS[page - 1].map((name, i) => ({name, place: PLACES[ids[i]], code: ids[i], color: COLORS[i], i}));
   const pins = people.filter(p => p.place[1] !== null);
   const markers = pins.map(p => {
