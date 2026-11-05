@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check worker.mjs",
+    "check": "node --check worker.mjs && node --check map-svg.mjs && node --check text-paths.mjs && node --check glyphs.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },

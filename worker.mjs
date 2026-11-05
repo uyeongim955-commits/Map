@@ -2,7 +2,7 @@ import { renderMap, resolveLocations } from './map-svg.mjs';
 import { outlineText } from './text-paths.mjs';
 
 const SVG_ORIGIN = 'https://map.a202214421.workers.dev';
-const VERSION = 'parchment-random-v5';
+const VERSION = 'parchment-unified-dorm-v6';
 const PNG_HEADERS = {
   'Content-Type': 'image/png',
   'Cache-Control': 'public, max-age=86400',
